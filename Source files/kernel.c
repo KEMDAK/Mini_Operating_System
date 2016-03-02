@@ -3,12 +3,14 @@ void readString(char*);
 
 int main()
 {
-	char* line[70];
-	printString("Enter a line: \0");
-	readString(line);
-	printString("  ");
-	printString(line);
-	printString("\n\r\0");
+	while(1){
+		char* line[80];
+		printString("Enter a line: \0");
+		readString(line);
+		printString("\n\r\0");
+		printString(line);
+		printString("\n\r\0");
+	}
 }
 
 void printString(char* chars)
@@ -21,7 +23,6 @@ void printString(char* chars)
 		interrupt(0x10, ax, 0,0,0);
 		i = i + 1;
 	}
-	// interrupt(0x10,ah*256+nl,0,0,0);
 }
 
 void readString(char* line)
@@ -48,11 +49,9 @@ void readString(char* line)
 	    }
 
 	    if(c == 0xd){
-		    char lineFeed = 0xa;
-		    char endString = 0x0;
-		    line[index] = lineFeed;
-		    line[index+1] = endString;
+			char lineFeed = 0xa;
+			char endString = 0x0;
+			line[index] = lineFeed;
+			line[index+1] = endString;
 		}
-
-    // line[index] = 0;
 }
