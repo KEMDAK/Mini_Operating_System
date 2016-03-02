@@ -1,48 +1,58 @@
+void printString(char*);
+void readString(char*);
+
 int main()
 {
+	char* line[70];
+	printString("Enter a line: \0");
+	readString(line);
+	printString("  ");
+	printString(line);
+	printString("\n\r\0");
+}
+
+void printString(char* chars)
+{
 	int i = 0;
-	while(i < 4000){
-		putInMemory(0xB000, 0x8000 + i, '');
-		putInMemory(0xB000, 0x8001 + i, 0x7);
-		i = i + 2;
+	char ah = 0xE;
+	while(chars[i] != '\0'){
+		char al = chars[i];
+		int ax = ah * 256 + al;
+		interrupt(0x10, ax, 0,0,0);
+		i = i + 1;
 	}
+	// interrupt(0x10,ah*256+nl,0,0,0);
+}
 
-	putInMemory(0xB000, 0x8000, 'H');
-	putInMemory(0xB000, 0x8001, 0x2);
+void readString(char* line)
+{
+    int index = 0;
+    char c = interrupt(0x16, 0, 0, 0, 0);
+    
+	    while((c != 0xd)) {
+	        interrupt(0x10, 0xE * 256 + c, 0, 0, 0);
 
-	putInMemory(0xB000, 0x8002, 'e');
-	putInMemory(0xB000, 0x8003, 0xC);
+	        /*0x8 = backspace*/
+	        if(c != 0x8) {
+	            line[index] = c;
+	            index++;
+	        }else {
+	        	if(index > 0) {
+					interrupt(0x10, 0xE * 256 + '\0', 0, 0, 0);
+	        		interrupt(0x10, 0xE * 256 + c, 0, 0, 0);
+	            	index--;
+	     	   }
+	    	}
 
-	putInMemory(0xB000, 0x8004, 'l');
-	putInMemory(0xB000, 0x8005, 0x9);
+	       c = interrupt(0x16, 0, 0, 0, 0);
+	    }
 
-	putInMemory(0xB000, 0x8006, 'l');
-	putInMemory(0xB000, 0x8007, 0xA);
+	    if(c == 0xd){
+		    char lineFeed = 0xa;
+		    char endString = 0x0;
+		    line[index] = lineFeed;
+		    line[index+1] = endString;
+		}
 
-	putInMemory(0xB000, 0x8008, 'o');
-	putInMemory(0xB000, 0x8009, 0xB);
-
-	putInMemory(0xB000, 0x800A, ' ');
-	putInMemory(0xB000, 0x800B, 0x7);
-
-	putInMemory(0xB000, 0x800C, 'W');
-	putInMemory(0xB000, 0x800D, 0x3);
-
-	putInMemory(0xB000, 0x800E, 'o');
-	putInMemory(0xB000, 0x800F, 0xD);
-
-	putInMemory(0xB000, 0x8010, 'r');
-	putInMemory(0xB000, 0x8011, 0xE);
-
-	putInMemory(0xB000, 0x8012, 'l');
-	putInMemory(0xB000, 0x8013, 0xF);
-
-	putInMemory(0xB000, 0x8014, 'd');
-	putInMemory(0xB000, 0x8015, 0x5);
-
-	putInMemory(0xB000, 0x8016, '!');
-	putInMemory(0xB000, 0x8017, 0x4);
-
-	while (1) {
-	}
+    // line[index] = 0;
 }
