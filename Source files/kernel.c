@@ -4,17 +4,45 @@ void readSector(char*, int);
 
 int main()
 {
-	char line[80];
-	printString("Enter a line: \0");
-	readString(line);
-	printString("\n\r\0");
-	printString(line);
-	printString("\n\r\0");
+	// Task 1, Task 2
+	// char line[80];
+	// printString("Enter a line: \0");
+	// readString(line);
+	// printString("\n\r\0");
+	// printString(line);
+	// printString("\n\r\0");
 
-	// // task 4
+	// Task 3
 	// char buffer[512];
 	// readSector(buffer, 30);
 	// printString(buffer);
+
+	// Task 4
+	// makeInterrupt21();
+	// interrupt(0x21, 0, 0, 0, 0);
+
+	// Taks 5
+
+	// testing printString and readString
+	char line[80];
+	makeInterrupt21();
+	interrupt(0x21, 1, line, 0, 0);
+	printString("\n\r\0");
+	interrupt(0x21, 0, line, 0, 0);
+	printString("\n\r\0");
+
+
+	// testing readSector
+	// char line[512];
+	// makeInterrupt21();
+	// interrupt(0x21, 2, line, 30, 0);
+	// interrupt(0x21, 0, line, 0, 0);
+
+
+	// testing error
+	// char line[80];
+	// makeInterrupt21();
+	// interrupt(0x21, 3, line, 0, 0);
 
 	while(1);
 }
@@ -101,4 +129,20 @@ int MOD(int x, int y) {
 	res = res - 1;
 
 	return x - (res * y);
+}
+
+void handleInterrupt21(int ax, int bx, int cx, int dx) {
+	// Was for Task 4
+	// printString("Hello World!");
+	//-->
+
+	switch(ax) {
+		case 0:printString(bx); break;
+
+		case 1:readString(bx); break;
+
+		case 2:readSector(bx, cx); break;
+
+		default: printString("You have entered an AX value greater than 2, don't do that!"); break;			
+	}
 }
