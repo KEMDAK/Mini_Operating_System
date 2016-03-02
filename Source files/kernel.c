@@ -1,16 +1,22 @@
 void printString(char*);
 void readString(char*);
+void readSector(char*, int);
 
 int main()
 {
-	while(1){
-		char* line[80];
-		printString("Enter a line: \0");
-		readString(line);
-		printString("\n\r\0");
-		printString(line);
-		printString("\n\r\0");
-	}
+	char line[80];
+	printString("Enter a line: \0");
+	readString(line);
+	printString("\n\r\0");
+	printString(line);
+	printString("\n\r\0");
+
+	// // task 4
+	// char buffer[512];
+	// readSector(buffer, 30);
+	// printString(buffer);
+
+	while(1);
 }
 
 void printString(char* chars)
@@ -27,31 +33,72 @@ void printString(char* chars)
 
 void readString(char* line)
 {
-    int index = 0;
-    char c = interrupt(0x16, 0, 0, 0, 0);
-    
-	    while((c != 0xd)) {
-	        interrupt(0x10, 0xE * 256 + c, 0, 0, 0);
+	int index = 0;
+	char c = interrupt(0x16, 0, 0, 0, 0);
 
-	        /*0x8 = backspace*/
-	        if(c != 0x8) {
-	            line[index] = c;
-	            index++;
-	        }else {
-	        	if(index > 0) {
-					interrupt(0x10, 0xE * 256 + '\0', 0, 0, 0);
-	        		interrupt(0x10, 0xE * 256 + c, 0, 0, 0);
-	            	index--;
-	     	   }
-	    	}
+	while((c != 0xd)) {
+		interrupt(0x10, 0xE * 256 + c, 0, 0, 0);
 
-	       c = interrupt(0x16, 0, 0, 0, 0);
-	    }
-
-	    if(c == 0xd){
-			char lineFeed = 0xa;
-			char endString = 0x0;
-			line[index] = lineFeed;
-			line[index+1] = endString;
+		/*0x8 = backspace*/
+		if(c != 0x8) {
+			line[index] = c;
+			index++;
+		}else {
+			if(index > 0) {
+				interrupt(0x10, 0xE * 256 + '\0', 0, 0, 0);
+				interrupt(0x10, 0xE * 256 + c, 0, 0, 0);
+				index--;
+			}
 		}
+
+		c = interrupt(0x16, 0, 0, 0, 0);
+	}
+
+	if(c == 0xd){
+		char lineFeed = 0xa;
+		char endString = 0x0;
+		line[index] = lineFeed;
+		line[index+1] = endString;
+	}
+}
+
+void readSector(char* buffer, int sector) {
+	int relativeSector = MOD(sector, 18) + 1;
+	int head = MOD(DIV(sector, 18), 2);
+	int track = DIV(sector, 36);
+	int AX = 2 * 256 + 1;
+	int BX = buffer;
+	int CX = track * 256 + relativeSector;
+	int DX = head * 256 + 0;
+
+	interrupt(0x13, AX, BX, CX, DX);
+}
+
+int DIV(int x, int y) {
+	int res = 0;
+
+	while (x > 0) {
+		x = x - y;
+		res = res + 1;
+	}
+
+	if(x < 0)
+	res = res - 1;
+
+	return res;
+}
+
+int MOD(int x, int y) {
+	int res = 0;
+
+	int tempX = x;
+	while (tempX > 0) {
+		tempX = tempX - y;
+		res = res + 1;
+	}
+
+	if(tempX < 0)
+	res = res - 1;
+
+	return x - (res * y);
 }
