@@ -145,23 +145,17 @@ void readFile(char* fileName, char* buffer)
 	char directory[512];
 	readSector(directory, 2);
 
-	// printString((0 == 0) + '\0');
-	// printString("\n\r\0");
-	// printString((0 == 1) + '\0');
-	// printString("\n\r\0");
 	while (i < 16 && !found)
 	{
 		int cur = 1;
 		int j;
 		int startIndex = i*32;
+
 		for (j = 0; j < 6 && cur; j++)
 		{
 
 			if (fileName[j] == '\0') break;
 
-			// printString("file name " + directory[j + startIndex] + '\0');
-			// printString(("directory " + directory[j + startIndex]) + '\0');
-			// printString("\n\r\0");
 			if (fileName[j] != directory[j + startIndex])
 				cur = 0;
 		}
