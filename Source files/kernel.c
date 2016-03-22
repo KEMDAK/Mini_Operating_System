@@ -3,6 +3,8 @@ void readString(char*);
 void readSector(char*, int);
 void readFile(char* fileName, char* buffer);
 void deleteFile(char* name);
+void terminate();
+void writeSector(char*, int);
 
 int main()
 {
@@ -46,10 +48,10 @@ int main()
 	// makeInterrupt21();
 	// interrupt(0x21, 3, line, 0, 0);
 
-	// char buffer[13312]; /*this is the maximum size of a file*/
+	// char buffer1[13312]; /*this is the maximum size of a file*/
 	// makeInterrupt21();
-	// interrupt(0x21, 3, "messag\0", buffer, 0); /*read the file into buffer*/
-	// interrupt(0x21, 0, buffer, 0, 0); /*print out the file*/
+	// interrupt(0x21, 3, "messag\0", buffer1, 0); /*read the file into buffer*/
+	// interrupt(0x21, 0, buffer1, 0, 0); /*print out the file*/
 
 	char buffer[13312];
 	makeInterrupt21();
@@ -216,18 +218,23 @@ void deleteFile(char* name)
 
 		if (cur) 
 		{
-			directory[startIndex] = 0;
-
+			int j = startIndex + 6;
 			char map[512];
 			readSector(map, 1);
+			directory[startIndex] = 0;
 
-			int j;
-			for (j = startIndex + 6; j < startIndex + 32; j++)
+
+			for (; j < startIndex + 32; j++)
 			{
 				if (directory[j] == 0) break;
 
 				map[directory[j]] = 0;
-			}	
+			}
+
+			writeSector(directory, 2);
+			writeSector(map, 1);
+
+			return;
 		}
 
 		i++;
@@ -235,6 +242,23 @@ void deleteFile(char* name)
 
 	if (!found)
 		return;	
+}
+
+void terminate(){
+	while(1);
+}
+
+
+void writeSector(char* buffer, int sector) {
+	int relativeSector = MOD(sector, 18) + 1;
+	int head = MOD(DIV(sector, 18), 2);
+	int track = DIV(sector, 36);
+	int AX = 3 * 256 + 1;
+	int BX = buffer;
+	int CX = track * 256 + relativeSector;
+	int DX = head * 256 + 0;
+
+	interrupt(0x13, AX, BX, CX, DX);
 }
 
 void handleInterrupt21(int ax, int bx, int cx, int dx) {
@@ -251,8 +275,14 @@ void handleInterrupt21(int ax, int bx, int cx, int dx) {
 
 		case 3:readFile(bx, cx); break;
 
+		case 5:terminate(); break;
+
+		case 6:writeSector(bx, cx); break;
+
 		case 7:deleteFile(bx); break;
 
-		default: printString("You have entered an AX value greater than 3, don't do that!"); break;			
+
+		default: printString("You have entered an ivalid value if AX, don't do that!"); break;			
 	}
 }
+
