@@ -2,6 +2,8 @@ void printString(char*);
 void readString(char*);
 void readSector(char*, int);
 void readFile(char* fileName, char* buffer);
+void terminate();
+void writeSector(char*, int);
 
 
 int main()
@@ -198,6 +200,27 @@ void handleInterrupt21(int ax, int bx, int cx, int dx) {
 
 		case 3:readFile(bx, cx); break;
 
+		case 5:terminate(); break;
+
+		case 6:writeSector(bx, cx); break;
+
 		default: printString("You have entered an AX value greater than 3, don't do that!"); break;			
 	}
+}
+
+void terminate(){
+	while(1);
+}
+
+
+void writeSector(char* buffer, int sector) {
+	int relativeSector = MOD(sector, 18) + 1;
+	int head = MOD(DIV(sector, 18), 2);
+	int track = DIV(sector, 36);
+	int AX = 3 * 256 + 1;
+	int BX = buffer;
+	int CX = track * 256 + relativeSector;
+	int DX = head * 256 + 0;
+
+	interrupt(0x13, AX, BX, CX, DX);
 }
