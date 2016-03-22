@@ -1,6 +1,10 @@
 void printString(char*);
 void readString(char*);
 void readSector(char*, int);
+void readFile(char* fileName, char* buffer);
+void terminate();
+void writeSector(char*, int);
+
 
 int main()
 {
@@ -24,12 +28,12 @@ int main()
 	// Taks 5
 
 	// testing printString and readString
-	char line[80];
-	makeInterrupt21();
-	interrupt(0x21, 1, line, 0, 0);
-	printString("\n\r\0");
-	interrupt(0x21, 0, line, 0, 0);
-	printString("\n\r\0");
+	// char line[80];
+	// makeInterrupt21();
+	// interrupt(0x21, 1, line, 0, 0);
+	// printString("\n\r\0");
+	// interrupt(0x21, 0, line, 0, 0);
+	// printString("\n\r\0");
 
 
 	// testing readSector
@@ -44,7 +48,11 @@ int main()
 	// makeInterrupt21();
 	// interrupt(0x21, 3, line, 0, 0);
 
-	while(1);
+	char buffer[13312]; /*this is the maximum size of a file*/
+	makeInterrupt21();
+	interrupt(0x21, 3, "messag\0", buffer, 0); /*read the file into buffer*/
+	interrupt(0x21, 0, buffer, 0, 0); /*print out the file*/
+	while(1); /*hang up*/
 }
 
 void printString(char* chars)
@@ -111,7 +119,7 @@ int DIV(int x, int y) {
 	}
 
 	if(x < 0)
-	res = res - 1;
+		res = res - 1;
 
 	return res;
 }
@@ -126,9 +134,56 @@ int MOD(int x, int y) {
 	}
 
 	if(tempX < 0)
-	res = res - 1;
+		res = res - 1;
 
 	return x - (res * y);
+}
+
+void readFile(char* fileName, char* buffer)
+{
+	int i = 0;
+	int found = 0;
+
+	char directory[512];
+	readSector(directory, 2);
+
+	while (i < 16 && !found)
+	{
+		int cur = 1;
+		int j;
+		int startIndex = i*32;
+
+		for (j = 0; j < 6 && cur; j++)
+		{
+
+			if (fileName[j] == '\0') break;
+
+			if (fileName[j] != directory[j + startIndex])
+				cur = 0;
+		}
+
+		if (cur) 
+		{
+			int index = 0;
+			char tempBuffer[512];
+			found = 1;
+			for (j = 6; j < 26; j++)
+			{
+				int k = 0;
+				if (directory[j + startIndex] == 0) break;
+
+				readSector(tempBuffer, directory[j + startIndex]);
+
+				for (; k < 512; k++)
+					buffer[index++] = tempBuffer[k];
+			}
+		}
+
+		i++;
+	}
+
+	if (!found)
+		return;
 }
 
 void handleInterrupt21(int ax, int bx, int cx, int dx) {
@@ -143,6 +198,29 @@ void handleInterrupt21(int ax, int bx, int cx, int dx) {
 
 		case 2:readSector(bx, cx); break;
 
-		default: printString("You have entered an AX value greater than 2, don't do that!"); break;			
+		case 3:readFile(bx, cx); break;
+
+		case 5:terminate(); break;
+
+		case 6:writeSector(bx, cx); break;
+
+		default: printString("You have entered an AX value greater than 3, don't do that!"); break;			
 	}
+}
+
+void terminate(){
+	while(1);
+}
+
+
+void writeSector(char* buffer, int sector) {
+	int relativeSector = MOD(sector, 18) + 1;
+	int head = MOD(DIV(sector, 18), 2);
+	int track = DIV(sector, 36);
+	int AX = 3 * 256 + 1;
+	int BX = buffer;
+	int CX = track * 256 + relativeSector;
+	int DX = head * 256 + 0;
+
+	interrupt(0x13, AX, BX, CX, DX);
 }
