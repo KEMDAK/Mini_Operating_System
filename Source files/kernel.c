@@ -2,7 +2,7 @@ void printString(char*);
 void readString(char*);
 void readSector(char*, int);
 void readFile(char* fileName, char* buffer);
-
+void deleteFile(char* name);
 
 int main()
 {
@@ -46,10 +46,17 @@ int main()
 	// makeInterrupt21();
 	// interrupt(0x21, 3, line, 0, 0);
 
-	char buffer[13312]; /*this is the maximum size of a file*/
+	// char buffer[13312]; /*this is the maximum size of a file*/
+	// makeInterrupt21();
+	// interrupt(0x21, 3, "messag\0", buffer, 0); /*read the file into buffer*/
+	// interrupt(0x21, 0, buffer, 0, 0); /*print out the file*/
+
+	char buffer[13312];
 	makeInterrupt21();
-	interrupt(0x21, 3, "messag\0", buffer, 0); /*read the file into buffer*/
-	interrupt(0x21, 0, buffer, 0, 0); /*print out the file*/
+	interrupt(0x21, 7, "messag\0", 0, 0); //delete messag
+	interrupt(0x21, 3, "messag\0", buffer, 0); // try to read messag
+	interrupt(0x21, 0, buffer, 0, 0); //print out the contents of buffer
+
 	while(1); /*hang up*/
 }
 
@@ -184,6 +191,52 @@ void readFile(char* fileName, char* buffer)
 		return;
 }
 
+void deleteFile(char* name)
+{
+	int i = 0;
+	int found = 0;
+
+	char directory[512];
+	readSector(directory, 2);
+
+	while (i < 16 && !found)
+	{
+		int cur = 1;
+		int j;
+		int startIndex = i*32;
+
+		for (j = 0; j < 6 && cur; j++)
+		{
+
+			if (name[j] == '\0') break;
+
+			if (name[j] != directory[j + startIndex])
+				cur = 0;
+		}
+
+		if (cur) 
+		{
+			directory[startIndex] = 0;
+
+			char map[512];
+			readSector(map, 1);
+
+			int j;
+			for (j = startIndex + 6; j < startIndex + 32; j++)
+			{
+				if (directory[j] == 0) break;
+
+				map[directory[j]] = 0;
+			}	
+		}
+
+		i++;
+	}
+
+	if (!found)
+		return;	
+}
+
 void handleInterrupt21(int ax, int bx, int cx, int dx) {
 	// Was for Task 4
 	// printString("Hello World!");
@@ -197,6 +250,8 @@ void handleInterrupt21(int ax, int bx, int cx, int dx) {
 		case 2:readSector(bx, cx); break;
 
 		case 3:readFile(bx, cx); break;
+
+		case 7:deleteFile(bx); break;
 
 		default: printString("You have entered an AX value greater than 3, don't do that!"); break;			
 	}
