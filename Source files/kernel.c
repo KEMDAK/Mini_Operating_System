@@ -49,7 +49,7 @@ int main()
 	char buffer[13312]; /*this is the maximum size of a file*/
 	makeInterrupt21();
 	interrupt(0x21, 3, "messag\0", buffer, 0); /*read the file into buffer*/
-	// interrupt(0x21, 0, buffer, 0, 0); /*print out the file*/
+	interrupt(0x21, 0, buffer, 0, 0); /*print out the file*/
 	while(1); /*hang up*/
 }
 
