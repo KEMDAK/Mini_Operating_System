@@ -4,7 +4,6 @@ void readSector(char*, int);
 void writeSector(char*, int);
 void readFile(char* fileName, char* buffer);
 void deleteFile(char* name);
-void terminate();
 void writeFile(char* name, char* buffer, int secNum);
 int findFreeDirectory(char* directory);
 int findFreeSector(char* map);
@@ -52,16 +51,16 @@ int main()
 	// makeInterrupt21();
 	// interrupt(0x21, 3, line, 0, 0);
 
-	char buffer1[13312]; /*this is the maximum size of a file*/
-	makeInterrupt21();
-	interrupt(0x21, 3, "messag\0", buffer1, 0); /*read the file into buffer*/
-	interrupt(0x21, 0, buffer1, 0, 0); /*print out the file*/
-
-	// char buffer[13312];
+	// char buffer1[13312]; /*this is the maximum size of a file*/
 	// makeInterrupt21();
-	// interrupt(0x21, 7, "messag\0", 0, 0); //delete messag
-	// interrupt(0x21, 3, "messag\0", buffer, 0); // try to read messag
-	// interrupt(0x21, 0, buffer, 0, 0); //print out the contents of buffer
+	// interrupt(0x21, 3, "messag\0", buffer1, 0); /*read the file into buffer*/
+	// interrupt(0x21, 0, buffer1, 0, 0); /*print out the file*/
+
+	char buffer[13312];
+	makeInterrupt21();
+	interrupt(0x21, 7, "messag\0", 0, 0); //delete messag
+	interrupt(0x21, 3, "messag\0", buffer, 0); // try to read messag
+	interrupt(0x21, 0, buffer, 0, 0); //print out the contents of buffer
 
 	while(1); /*hang up*/
 	// char buffer[13312]; /*this is the maximum size of a file*/
