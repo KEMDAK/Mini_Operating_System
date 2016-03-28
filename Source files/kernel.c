@@ -7,6 +7,7 @@ void deleteFile(char* name);
 void writeFile(char* name, char* buffer, int secNum);
 int findFreeDirectory(char* directory);
 int findFreeSector(char* map);
+void executeProgram(char* name, int segment);
 void terminate();
 
 int main()
@@ -55,14 +56,18 @@ int main()
 	// makeInterrupt21();
 	// interrupt(0x21, 3, "messag\0", buffer1, 0); /*read the file into buffer*/
 	// interrupt(0x21, 0, buffer1, 0, 0); /*print out the file*/
+	// printString("hello\0");
+	// makeInterrupt21();
+	// run the shell
 
-	char buffer[13312];
-	makeInterrupt21();
-	interrupt(0x21, 7, "messag\0", 0, 0); //delete messag
-	interrupt(0x21, 3, "messag\0", buffer, 0); // try to read messag
-	interrupt(0x21, 0, buffer, 0, 0); //print out the contents of buffer
+	// while(1);
+	// char buffer[13312];
+	// makeInterrupt21();
+	// interrupt(0x21, 7, "messag\0", 0, 0); //delete messag
+	// interrupt(0x21, 3, "messag\0", buffer, 0); // try to read messag
+	// interrupt(0x21, 0, buffer, 0, 0); //print out the contents of buffer
 
-	while(1); /*hang up*/
+	// while(1); /*hang up*/
 	// char buffer[13312]; /*this is the maximum size of a file*/
 	// makeInterrupt21();
 	// interrupt(0x21, 3, "messag\0", buffer, 0); /*read the file into buffer*/
@@ -80,6 +85,12 @@ int main()
 	// interrupt(0x21,3, "testW\0", buffer1, 0); //read file testW
 	// interrupt(0x21,0, buffer1, 0, 0); // print out contents of testW
 	// terminate();
+
+	// printString("here\0");
+	// makeInterrupt21();
+	// interrupt(0x21, 4, "tstprg\0", 0x2000, 0);
+	makeInterrupt21();
+	interrupt(0x21, 4, "shell\0", 0x2000, 0);
 }
 
 void printString(char* chars)
@@ -120,8 +131,8 @@ void readString(char* line)
 	if(c == 0xd){
 		char lineFeed = 0xa;
 		char endString = 0x0;
-		line[index] = lineFeed;
-		line[index+1] = endString;
+		// line[index] = lineFeed;
+		line[index] = endString;
 	}
 }
 
@@ -146,7 +157,7 @@ int DIV(int x, int y) {
 	}
 
 	if(x < 0)
-	res = res - 1;
+		res = res - 1;
 
 	return res;
 }
@@ -161,7 +172,7 @@ int MOD(int x, int y) {
 	}
 
 	if(tempX < 0)
-	res = res - 1;
+		res = res - 1;
 
 	return x - (res * y);
 }
@@ -172,7 +183,6 @@ void readFile(char* fileName, char* buffer) {
 
 	char directory[512];
 	readSector(directory, 2);
-
 	while (i < 16 && !found)
 	{
 		int cur = 1;
@@ -182,10 +192,14 @@ void readFile(char* fileName, char* buffer) {
 		for (j = 0; j < 6 && cur; j++)
 		{
 
-			if (fileName[j] == '\0') break;
-
+			if (fileName[j] == '\0')
+			{
+				if (directory[j + startIndex] != 0)
+					cur = 0; 
+				break;
+			}
 			if (fileName[j] != directory[j + startIndex])
-			cur = 0;
+				cur = 0;
 		}
 
 		if (cur)
@@ -201,7 +215,7 @@ void readFile(char* fileName, char* buffer) {
 				readSector(tempBuffer, directory[j + startIndex]);
 
 				for (; k < 512; k++)
-				buffer[index++] = tempBuffer[k];
+					buffer[index++] = tempBuffer[k];
 			}
 		}
 
@@ -209,7 +223,7 @@ void readFile(char* fileName, char* buffer) {
 	}
 
 	if (!found)
-	return;
+		return;
 }
 
 void writeFile(char* name, char* buffer, int secNum) {
@@ -225,24 +239,25 @@ void writeFile(char* name, char* buffer, int secNum) {
 	freeDirectory = findFreeDirectory(directory);
 
 	// writting the file name
-	for(i = 0; i < 6; i++) {
-		if(name[i] == '\0'){
-			for(; i < 6; i++) {
-				directory[freeDirectory + i] = 0;
-			}
+	for (i = 0; i < 6; i++)
+		directory[freeDirectory + i] = 0;
 
-			break;
-		}
-		else {
-			directory[freeDirectory + i] = name[i];
-		}
+	for (i = 0; i < 6; i++)
+	{
+		if (name[i] == '\0') break;
+
+		directory[freeDirectory + i] = name[i];
 	}
 
+
+	for (i = 6; i < 32; i++)
+		directory[freeDirectory + i] = 0;
+	
 	// writing the file content
 	bufferIndex = 0;
 	for(i = 6; i < secNum + 6; i++) {
 		int freeSector = findFreeSector(map);
-		map[freeSector] = 1;
+		map[freeSector] = 0xFF;
 
 		directory[freeDirectory + i] = freeSector;
 
@@ -300,7 +315,12 @@ void deleteFile(char* name)
 		for (j = 0; j < 6 && cur; j++)
 		{
 
-			if (name[j] == '\0') break;
+			if (name[j] == '\0')
+			{
+				if (directory[j + startIndex] != 0)
+					cur = 0; 
+				break;
+			}
 
 			if (name[j] != directory[j + startIndex])
 				cur = 0;
@@ -330,8 +350,25 @@ void deleteFile(char* name)
 		i++;
 	}
 
-	if (!found)
+	if (!found){
+		printString("File not found\n\0");
 		return;	
+	}
+}
+
+void executeProgram(char* name, int segment) 
+{
+	int index = 0;
+	char buffer[13312];
+	readFile(name, buffer);
+
+	while(index < 13312)
+	{
+		putInMemory(segment, index, buffer[index]);
+		index = index + 1;
+	}
+
+	launchProgram(segment);
 }
 
 void terminate(){
@@ -364,6 +401,8 @@ void handleInterrupt21(int ax, int bx, int cx, int dx) {
 		case 2:readSector(bx, cx); break;
 
 		case 3:readFile(bx, cx); break;
+
+		case 4:executeProgram(bx, cx); break;
 
 		case 5:terminate(); break;
 
