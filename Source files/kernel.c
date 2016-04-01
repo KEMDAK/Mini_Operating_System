@@ -195,7 +195,7 @@ void readFile(char* fileName, char* buffer) {
 			if (fileName[j] == '\0')
 			{
 				if (directory[j + startIndex] != 0)
-					cur = 0; 
+					cur = 0;
 				break;
 			}
 			if (fileName[j] != directory[j + startIndex])
@@ -252,7 +252,7 @@ void writeFile(char* name, char* buffer, int secNum) {
 
 	for (i = 6; i < 32; i++)
 		directory[freeDirectory + i] = 0;
-	
+
 	// writing the file content
 	bufferIndex = 0;
 	for(i = 6; i < secNum + 6; i++) {
@@ -318,7 +318,7 @@ void deleteFile(char* name)
 			if (name[j] == '\0')
 			{
 				if (directory[j + startIndex] != 0)
-					cur = 0; 
+					cur = 0;
 				break;
 			}
 
@@ -326,7 +326,7 @@ void deleteFile(char* name)
 				cur = 0;
 		}
 
-		if (cur) 
+		if (cur)
 		{
 			int j = startIndex + 6;
 			char map[512];
@@ -352,11 +352,11 @@ void deleteFile(char* name)
 
 	if (!found){
 		printString("File not found\n\0");
-		return;	
+		return;
 	}
 }
 
-void executeProgram(char* name, int segment) 
+void executeProgram(char* name, int segment)
 {
 	int index = 0;
 	char buffer[13312];
@@ -372,7 +372,14 @@ void executeProgram(char* name, int segment)
 }
 
 void terminate(){
-	while(1);
+	char c[6];
+	c[0] = 's';
+	c[1] = 'h';
+	c[2] = 'e';
+	c[3] = 'l';
+	c[4] = 'l';
+	c[5] = '\0';
+	interrupt(0x21, 4, c, 0x2000, 0);
 }
 
 
@@ -415,4 +422,3 @@ void handleInterrupt21(int ax, int bx, int cx, int dx) {
 		default: printString("You have entered an AX value that is not defined, don't do that!"); break;
 	}
 }
-

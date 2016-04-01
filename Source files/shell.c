@@ -7,7 +7,7 @@ int DIV(int x, int y);
 
 int main()
 {
-	while(1) 
+	while(1)
 	{
 		char input[200];
 		char command[30];
@@ -31,7 +31,7 @@ int main()
 			else
 				interrupt(0x21, 0, data, 0, 0);
 		}
-		else if (equal(command, "execute\0")) // doesn't get a shell again
+		else if (equal(command, "execute\0"))
 		{
 			char fileName[10];
 			getWord(input+8, fileName);
@@ -109,7 +109,7 @@ int main()
 						break;
 					numSec++;
 				}
-				
+
 				if (fileName[0] != '\0')
 				{
 					char c[3];
@@ -168,13 +168,14 @@ int main()
 			interrupt(0x21, 8, fileName, data, sectors, 0);
 			interrupt(0x21, 0, "\n\r\0", 0, 0);
 		}
-		else
+		else if (!equal(command, "\0"))
 		{
 			interrupt(0x21, 0, "NMSK: command not found: \0", 0, 0);
 			interrupt(0x21, 0, command + '\0', 0, 0);
+			interrupt(0x21, 0, "\n\0", 0, 0);
 		}
 
-		interrupt(0x21, 0, "\n\r\0", 0, 0);
+		interrupt(0x21, 0, "\r\0", 0, 0);
 	}
 }
 
@@ -201,7 +202,10 @@ int equal(char* s1, char* s2)
 		index = index + 1;
 	}
 
-	return 1;
+	if (s1[index] == '\0' && s2[index] == '\0')
+		return 1;
+	else
+		return 0;
 }
 
 int exists(char* file)
